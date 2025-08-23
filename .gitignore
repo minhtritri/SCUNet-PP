@@ -1,0 +1,16 @@
+img/
+label_image/
+label_image_aut/
+label_image_my/
+pred_image/
+pred_image_aut/
+pred_image_my/
+prediction/
+pretrained_ckpt/
+output/
+output_my/
+configs/swin_tiny_patch4_window7_224_lite.yaml
+test/
+datasets/.ipynb_checkpoints
+__pycache__
+datasets/Synapse
