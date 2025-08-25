@@ -5,8 +5,8 @@ import cv2
 from tqdm import tqdm  # Hiển thị tiến trình
 
 # Đường dẫn thư mục gốc chứa các thư mục bệnh nhân
-dicom_root = r"/home/vmtri/project/SCUNet-plusplus/dataset_original/CT_scans"  # Thay đường dẫn theo dữ liệu của bạn
-output_dir = r"/home/vmtri/project/SCUNet-plusplus/dataset_original/CT_scan_PNG"  # Thư mục lưu PNG
+dicom_root = r"/Users/trids/project/SCUNet-PP/data/CT_scan"  # Thay đường dẫn theo dữ liệu của bạn
+output_dir = r"/Users/trids/project/SCUNet-PP/data/CT_scan_PNG"  # Thư mục lưu PNG
 
 # Tạo thư mục output nếu chưa có
 os.makedirs(output_dir, exist_ok=True)

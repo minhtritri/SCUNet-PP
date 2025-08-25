@@ -5,8 +5,8 @@ import cv2
 from tqdm import tqdm
 
 # Thư mục chứa các file .mat (Ground Truth)
-mat_root = r"/home/vmtri/project/SCUNet-plusplus/dataset_original/GroudTruth"  # Thay bằng đường dẫn của bạn
-output_dir = r"/home/vmtri/project/SCUNet-plusplus/dataset_original/GroundTruth_PNG"  # Thư mục lưu ảnh PNG
+mat_root = r"/Users/trids/project/SCUNet-PP/data/GroundTruth"  # Thay bằng đường dẫn của bạn
+output_dir = r"/Users/trids/project/SCUNet-PP/data/GroundTruth_PNG"  # Thư mục lưu ảnh PNG
 
 # Tạo thư mục output nếu chưa có
 os.makedirs(output_dir, exist_ok=True)

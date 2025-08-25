@@ -16,7 +16,7 @@ from utils import DiceLoss
 from torchvision import transforms
 from utils import test_single_volume
 
-
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 def trainer_synapse(args, model, snapshot_path):
     from datasets.dataset_synapse import Synapse_dataset, RandomGenerator
     logging.basicConfig(filename=snapshot_path + "/log.txt", level=logging.INFO,
@@ -53,7 +53,7 @@ def trainer_synapse(args, model, snapshot_path):
     for epoch_num in iterator:
         for i_batch, sampled_batch in enumerate(trainloader):
             image_batch, label_batch = sampled_batch['image'], sampled_batch['label']
-            image_batch, label_batch = image_batch.cuda(), label_batch.cuda()
+            image_batch, label_batch = image_batch.to(device), label_batch.to(device)
             outputs = model(image_batch)
             loss_ce = ce_loss(outputs, label_batch[:].long())
             loss_dice = dice_loss(outputs, label_batch, softmax=True)

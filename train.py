@@ -22,7 +22,7 @@ from config import get_config
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--root_path', type=str,
-                    default='/content/datasets/Synapse/train_npz', help='root dir for data')
+                    default='/Users/trids/project/SCUNet-PP/datasets/Synapse/train_npz', help='root dir for data')
 parser.add_argument('--dataset', type=str,
                     default='Synapse', help='experiment_name')
 parser.add_argument('--list_dir', type=str,
@@ -102,10 +102,10 @@ if __name__ == "__main__":
     args.num_classes = dataset_config[dataset_name]['num_classes']
     args.root_path = dataset_config[dataset_name]['root_path']
     args.list_dir = dataset_config[dataset_name]['list_dir']
-
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
-    net = ViT_seg(config, img_size=args.img_size, num_classes=args.num_classes).cuda()
+    net = ViT_seg(config, img_size=args.img_size, num_classes=args.num_classes).to(device)
     net.load_from(config)
 
     trainer = {'Synapse': trainer_synapse, }

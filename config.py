@@ -14,6 +14,9 @@ _C.BASE = ['']
 _C.DATA = CN()
 # Batch size for a single GPU, could be overwritten by command line argument
 _C.DATA.BATCH_SIZE = 128
+# CONV
+
+
 # Path to dataset, could be overwritten by command line argument
 _C.DATA.DATA_PATH = ''
 # Dataset name
@@ -41,6 +44,7 @@ _C.MODEL.TYPE = 'swin'
 # Model name
 _C.MODEL.NAME = 'swin_tiny_patch4_window7_224'
 # Checkpoint to resume, could be overwritten by command line argument
+_C.MODEL.USE_CONV_STEM = False
 _C.MODEL.PRETRAIN_CKPT = './pretrained_ckpt/swin_tiny_patch4_window7_224.pth'
 _C.MODEL.RESUME = ''
 # Number of classes, overwritten in data preparation
@@ -188,7 +192,7 @@ def update_config(config, args):
     if args.opts:
         config.merge_from_list(args.opts)
 
-    # merge from specific arguments
+    # merge from specific arguments   
     if args.batch_size:
         config.DATA.BATCH_SIZE = args.batch_size
     if args.zip:
