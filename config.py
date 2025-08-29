@@ -35,6 +35,7 @@ _C.DATA.PIN_MEMORY = True
 # Number of data loading threads
 _C.DATA.NUM_WORKERS = 8
 
+
 # -----------------------------------------------------------------------------
 # Model settings
 # -----------------------------------------------------------------------------
@@ -43,6 +44,9 @@ _C.MODEL = CN()
 _C.MODEL.TYPE = 'swin'
 # Model name
 _C.MODEL.NAME = 'swin_tiny_patch4_window7_224'
+_C.MODEL.ATTN = 'se'
+_C.MODEL.ATTN_REDUCTION = 16 
+_C.MODEL.ATTN_HEADS = 4 
 # Checkpoint to resume, could be overwritten by command line argument
 _C.MODEL.USE_CONV_STEM = False
 _C.MODEL.PRETRAIN_CKPT = './pretrained_ckpt/swin_tiny_patch4_window7_224.pth'
