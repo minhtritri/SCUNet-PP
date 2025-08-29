@@ -20,6 +20,7 @@ Comparison of segmentation performance of different network models on the CAD-PE
 - Run train.py to Train (Put the dataset in npz format into datasets/Synapse/train_npz)
 -  Run test.py to Test (Put the dataset in npz format into datasets/test)
 - The batch size we used is 24. If you do not have enough GPU memory, the bacth size can be reduced to 12 or 6 to save memory.
+> python3 train.py --cfg '/Users/trids/project/SCUNet-PP/configs/swin_tiny_patch4_window7_224_lite.yaml' --batch_size 32
 
 ## 4. New FUMPE dataset
 
