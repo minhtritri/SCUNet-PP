@@ -6,6 +6,8 @@ import torch.utils.checkpoint as checkpoint
 from einops import rearrange
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 from networks.conv_stem import ConvStem
+from networks.skip_fusion import MultiFusionDenseSkip
+import torch.nn.functional as F
 
 class Mlp(nn.Module):
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
@@ -672,6 +674,34 @@ class SwinTransformerSys(nn.Module):
                  use_checkpoint=False, final_upsample="expand_first", use_conv_stem=False, **kwargs):
         super().__init__()
 
+        self.attn_type       = kwargs.get("attn", "none")
+        self.attn_reduction  = kwargs.get("attn_reduction", 16)
+        self.attn_heads      = kwargs.get("attn_heads", 4)
+        # số channel từng stage của encoder (Swin tạo ra)
+        self.embed_dim = embed_dim
+        C1 = self.embed_dim        # ví dụ 96
+        C2 = self.embed_dim * 2    # 192
+        C3 = self.embed_dim * 4    # 384
+        C4 = self.embed_dim * 8    # 768
+
+
+        self.skip4 = MultiFusionDenseSkip([C4, C3], C4,
+                                        attn_type=self.attn_type,
+                                        attn_reduction=self.attn_reduction,
+                                        attn_heads=self.attn_heads)
+        self.skip3 = MultiFusionDenseSkip([C3, C2], C3,
+                                        attn_type=self.attn_type,
+                                        attn_reduction=self.attn_reduction,
+                                        attn_heads=self.attn_heads)
+        self.skip2 = MultiFusionDenseSkip([C2, C1], C2,
+                                        attn_type=self.attn_type,
+                                        attn_reduction=self.attn_reduction,
+                                        attn_heads=self.attn_heads)
+        self.skip1 = MultiFusionDenseSkip([C1], C1,
+                                        attn_type=self.attn_type,
+                                        attn_reduction=self.attn_reduction,
+                                        attn_heads=self.attn_heads)
+
         print(
             "SwinTransformerSys expand initial----depths:{};depths_decoder:{};drop_path_rate:{};num_classes:{}".format(
                 depths,
@@ -921,18 +951,71 @@ class SwinTransformerSys(nn.Module):
         return x, x_downsample_new
 
     # Dencoder and Skip connection
+    # def forward_up_features(self, x, x_downsample):
+    #     for inx, layer_up in enumerate(self.layers_up):
+    #         if inx == 0:
+    #             x = layer_up(x)
+    #         else:
+    #             x = torch.cat([x, x_downsample[3 - inx]], -1)
+
+    #             x = self.concat_back_dim[inx](x)
+    #             x = layer_up(x)
+
+    #     x = self.norm_up(x)  # B L C
+
+    #     return x
     def forward_up_features(self, x, x_downsample):
+        # ---- helper ----
+        def token2feature(t):
+            B, L, C = t.shape
+            H = W = int(L ** 0.5)
+            return t.transpose(1, 2).view(B, C, H, W)  # [B,C,H,W]
+
+        def feature2token(f):
+            B, C, H, W = f.shape
+            return f.flatten(2).transpose(1, 2)  # [B,L,C]
+
         for inx, layer_up in enumerate(self.layers_up):
             if inx == 0:
-                x = layer_up(x)
-            else:
-                x = torch.cat([x, x_downsample[3 - inx]], -1)
-                x = self.concat_back_dim[inx](x)
+                # tầng đầu tiên decoder: chỉ upsample
                 x = layer_up(x)
 
-        x = self.norm_up(x)  # B L C
+            elif inx == 1:
+                # stage 3: fusion enc3 + enc2
+                skip = self.skip3([token2feature(x_downsample[2]),
+                                token2feature(x_downsample[1])],
+                                dec_feat=token2feature(x) if self.attn_type=="xattn" else None)
+                # cộng ở feature space
+                x_feat = token2feature(x)
+                if skip.shape[2:] != x_feat.shape[2:]:
+                    skip = F.interpolate(skip, size=x_feat.shape[2:], mode="bilinear", align_corners=False)
+                x = feature2token(x_feat + skip)
+                x = layer_up(x)
 
+            elif inx == 2:
+                # stage 2: fusion enc2 + enc1
+                skip = self.skip2([token2feature(x_downsample[1]),
+                                token2feature(x_downsample[0])],
+                                dec_feat=token2feature(x) if self.attn_type=="xattn" else None)
+                x_feat = token2feature(x)
+                if skip.shape[2:] != x_feat.shape[2:]:
+                    skip = F.interpolate(skip, size=x_feat.shape[2:], mode="bilinear", align_corners=False)
+                x = feature2token(x_feat + skip)
+                x = layer_up(x)
+
+            elif inx == 3:
+                # stage 1: fusion enc1 only
+                skip = self.skip1([token2feature(x_downsample[0])],
+                                dec_feat=token2feature(x) if self.attn_type=="xattn" else None)
+                x_feat = token2feature(x)
+                if skip.shape[2:] != x_feat.shape[2:]:
+                    skip = F.interpolate(skip, size=x_feat.shape[2:], mode="bilinear", align_corners=False)
+                x = feature2token(x_feat + skip)
+                x = layer_up(x)
+
+        x = self.norm_up(x)  # [B,L,C]
         return x
+
 
     def up_x4(self, x):
         H, W = self.patches_resolution
@@ -951,7 +1034,7 @@ class SwinTransformerSys(nn.Module):
         x, x_downsample = self.forward_features(x)
         x = self.forward_up_features(x, x_downsample)
         x = self.up_x4(x)
-
+        
         return x
 
     def flops(self):

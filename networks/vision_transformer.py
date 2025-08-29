@@ -27,6 +27,9 @@ class SwinUnet(nn.Module):
         use_conv_stem = getattr(config.MODEL, "USE_CONV_STEM", False)
         in_chans = getattr(config.MODEL.SWIN, "IN_CHANS", 1)
         embed_dim = getattr(config.MODEL.SWIN, "EMBED_DIM", 96)
+        attn = getattr(config.MODEL, "ATTN", 'se')
+        attn_reduction = getattr(config.MODEL, "ATTN_REDUCTION", 16)
+        attn_heads = getattr(config.MODEL, "ATTN_HEADS", 4)
 
         self.num_classes = num_classes
         self.zero_head = zero_head
@@ -48,7 +51,10 @@ class SwinUnet(nn.Module):
                                             ape=config.MODEL.SWIN.APE,
                                             patch_norm=config.MODEL.SWIN.PATCH_NORM,
                                             use_checkpoint=config.TRAIN.USE_CHECKPOINT,
-                                            use_conv_stem=use_conv_stem)
+                                            use_conv_stem=use_conv_stem,
+                                            attn=attn,
+                                            attn_reduction=attn_reduction,
+                                            attn_heads=attn_heads)
 
     def forward(self, x):
         if x.size()[1] == 1:

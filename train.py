@@ -68,6 +68,9 @@ parser.add_argument('--amp-opt-level', type=str, default='O1', choices=['O0', 'O
 parser.add_argument('--tag', help='tag of experiment')
 parser.add_argument('--eval', action='store_true', help='Perform evaluation only')
 parser.add_argument('--throughput', action='store_true', help='Test throughput only')
+parser.add_argument("--attn", type=str, default="se", choices=["none","se","cbam","xattn"])
+parser.add_argument("--attn-reduction", type=int, default=16)
+parser.add_argument("--attn-heads", type=int, default=4)
 
 args = parser.parse_args()
 if args.dataset == "Synapse":
